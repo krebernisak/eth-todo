@@ -18,21 +18,21 @@ contract RefundableTaskFactory is TaskFactory, FactoryEnumerable {
      * @param uri String URI where task info is located.
      * @param endTime The timestamp when lock release is enabled.
      * @param beneficiary address of the beneficiary to whom task is addressed.
-     * @param arbitrer address of the arbitrer who will intervene in case od dispute.
+     * @param arbitrator address of the arbitrator who will intervene in case od dispute.
      * @return Returns task contract address.
      */
     function create(
         string memory uri,
         uint256 endTime,
         address payable beneficiary,
-        address arbitrer
+        address arbitrator
     )
         public
         returns (address)
     {
         require(beneficiary != address(this), "Beneficiary address should not be this contract.");
-        require(arbitrer != address(this), "Arbitrer address should not be this contract.");
-        address task = address(new RefundableTask(uri, endTime, beneficiary, arbitrer));
+        require(arbitrator != address(this), "Arbitrator address should not be this contract.");
+        address task = address(new RefundableTask(uri, endTime, beneficiary, arbitrator));
         beneficiaryInstantiations[beneficiary].push(task);
         register(task);
     }

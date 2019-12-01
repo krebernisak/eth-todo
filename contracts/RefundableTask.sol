@@ -21,8 +21,8 @@ contract RefundableTask is Finalizable, Timelock {
     // Task state
     State private _state;
 
-    // Arbitrer that is going to close or enableRefunds for this task
-    address private _arbitrer;
+    // Arbitrator that is going to close or enableRefunds for this task
+    address private _arbitrator;
 
     // Refund escrow used to hold funds while task is running
     RefundEscrow private _escrow;
@@ -32,19 +32,19 @@ contract RefundableTask is Finalizable, Timelock {
      * @param uri String URI where task info is located.
      * @param endTime The timestamp when lock release is enabled.
      * @param beneficiary address of the beneficiary to whom task is addressed.
-     * @param arbitrer address of the arbitrer who will intervene in case od dispute.
+     * @param arbitrator address of the arbitrator who will intervene in case od dispute.
      */
-    constructor (string memory uri, uint256 endTime, address payable beneficiary, address arbitrer) public Timelock(endTime) {
+    constructor (string memory uri, uint256 endTime, address payable beneficiary, address arbitrator) public Timelock(endTime) {
         require(bytes(uri).length != 0, "RefundableTask: task URI should not be empty.");
         require(beneficiary != address(0), "RefundableTask: Beneficiary address should not be 0x0.");
-        require(arbitrer != address(0), "RefundableTask: Arbitrer address should not be 0x0.");
+        require(arbitrator != address(0), "RefundableTask: Arbitrator address should not be 0x0.");
         _uri = uri;
         _state = State.Active;
-        _arbitrer = arbitrer;
+        _arbitrator = arbitrator;
         _escrow = new RefundEscrow(beneficiary);
     }
 
-    /// @dev Throws if called by any account other than Accepted or Canceled.
+    /// @dev Throws if called with any state other than Accepted or Canceled.
     modifier onlyFinalState(State nextState) {
         bool isFinalState = nextState == State.Accepted || nextState == State.Canceled;
         require(isFinalState, "RefundableTask: resolved state can only be Accepted or Canceled");
@@ -57,9 +57,9 @@ contract RefundableTask is Finalizable, Timelock {
         _;
     }
 
-    /// @dev Throws if called by any account other than the arbitrer.
+    /// @dev Throws if called by any account other than the arbitrator.
     modifier onlyArbitrer() {
-        require(msg.sender == _arbitrer, "RefundableTask: caller is not the arbitrer");
+        require(msg.sender == _arbitrator, "RefundableTask: caller is not the arbitrator");
         _;
     }
 
@@ -78,9 +78,9 @@ contract RefundableTask is Finalizable, Timelock {
         return _escrow.beneficiary();
     }
 
-    /// @return The arbitrer of the task.
-    function arbitrer() public view returns (address) {
-        return _arbitrer;
+    /// @return The arbitrator of the task.
+    function arbitrator() public view returns (address) {
+        return _arbitrator;
     }
 
     /**
