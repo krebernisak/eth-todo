@@ -2,7 +2,7 @@ pragma solidity ^0.5.11;
 
 contract Migrations {
     address public owner;
-    uint public last_completed_migration;
+    uint public last_completed_migration; // solhint-disable-line var-name-mixedcase
 
     constructor() public {
         owner = msg.sender;

@@ -7,20 +7,34 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint:sol": "solhint --max-warnings 0 \"contracts/**/*.sol\""
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/krebernisak/eth-todo.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "solidity",
+    "ethereum",
+    "smart",
+    "contracts",
+    "security",
+    "todo"
+  ],
+  "author": "Kristijan Rebernisak <kristijan.rebernisak@gmail.com>",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/krebernisak/eth-todo/issues"
   },
   "homepage": "https://github.com/krebernisak/eth-todo#readme",
   "dependencies": {
     "openzeppelin-solidity": "^2.4.0"
+  },
+  "devDependencies": {
+    "solhint": "^2.3.0"
+  },
+  "resolutions": {
+    "eslint": "6.7.1"
   }
 }

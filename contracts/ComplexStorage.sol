@@ -2,16 +2,16 @@ pragma solidity ^0.5.11;
 
 contract ComplexStorage {
     uint public storeduint1 = 15;
-    uint public constant constuint = 16;
+    uint public constant CONST_UINT = 16;
     uint128 public investmentsLimit = 17055;
-    uint32 public investmentsDeadlineTimeStamp = uint32(now);
+    uint32 public investmentsDeadlineTimeStamp = uint32(block.timestamp); // solhint-disable-line not-rely-on-time
 
     bytes16 public string1 = "test1";
     bytes32 public string2 = "test1236";
     string public string3 = "lets string something";
 
-    mapping (address => uint) uints1;
-    mapping (address => DeviceData) structs1;
+    mapping (address => uint) public uints1;
+    mapping (address => DeviceData) public structs1;
 
     uint[] public uintarray;
     DeviceData[] public deviceDataArray;
