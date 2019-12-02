@@ -34,4 +34,12 @@ contract Timelock {
         // solhint-disable-next-line not-rely-on-time
         return block.timestamp >= _releaseTime;
     }
+
+    /**
+     * @dev Returns whether this contract lock is locked.
+     * @return Returns true if locked false otherwise.
+     */
+    function isLocked() public view returns (bool) {
+        return !isUnlocked();
+    }
 }

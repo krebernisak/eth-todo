@@ -2,7 +2,7 @@ const { BN } = require("@openzeppelin/test-helpers");
 const { expect } = require("chai");
 
 const shouldBehaveLikeFactoryEnumerable = ([_, owner, ...other]) => {
-  describe("as a FactoryEnumerable", function() {
+  describe("as FactoryEnumerable", function() {
     it("starts with 0 creators", async function() {
       expect(await this.contract.creatorsCount()).to.be.bignumber.equal("0");
     });

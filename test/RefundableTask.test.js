@@ -1,7 +1,5 @@
 const { time, expectRevert } = require("@openzeppelin/test-helpers");
-const {
-  shouldBehaveLikeFinalizable
-} = require("./lifecycle/Finalizable.behaviour");
+const { shouldBehaveLikeTimelock } = require("./lifecycle/Timelock.behaviour");
 
 const RefundableTask = artifacts.require("RefundableTask");
 
@@ -26,8 +24,10 @@ contract("RefundableTask", function(accounts) {
     it("can not finalized in start state", async function() {
       await expectRevert(
         this.contract.finalize({ from: owner }),
-        "RefundableTask: final state can only be Accepted or Canceled."
+        "RefundableTask: final state can only be Success or Failure"
       );
     });
   });
+
+  shouldBehaveLikeTimelock();
 });

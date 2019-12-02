@@ -3,7 +3,7 @@ pragma solidity ^0.5.11;
 import "openzeppelin-solidity/contracts/payment/escrow/RefundEscrow.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./lifecycle/Finalizable.sol";
-import "./Timelock.sol";
+import "./lifecycle/Timelock.sol";
 
 
 /**
@@ -14,11 +14,15 @@ contract RefundableTask is Finalizable, Timelock {
     using SafeMath for uint256;
 
     // Task state
-    enum State { Active, Dispute, Accepted, Canceled }
+    enum State { Active, Dispute, Success, Failure }
     event StateChanged(State oldState, State newState);
+    event TaskFinished(string solutionUri);
 
     // Task uri
     string private _uri;
+
+    // Task solution uri
+    string private _solutionUri;
 
     // Task state
     State private _state;
@@ -37,19 +41,24 @@ contract RefundableTask is Finalizable, Timelock {
      * @param arbitrator address of the arbitrator who will intervene in case od dispute.
      */
     constructor (string memory uri, uint256 endTime, address payable beneficiary, address arbitrator) public Timelock(endTime) {
-        require(bytes(uri).length != 0, "RefundableTask: task URI should not be empty.");
-        require(beneficiary != address(0), "RefundableTask: Beneficiary address should not be 0x0.");
-        require(arbitrator != address(0), "RefundableTask: Arbitrator address should not be 0x0.");
+        require(bytes(uri).length != 0, "RefundableTask: task URI should not be empty");
+        require(beneficiary != address(0), "RefundableTask: Beneficiary address should not be 0x0");
+        require(arbitrator != address(0), "RefundableTask: Arbitrator address should not be 0x0");
+
         _uri = uri;
         _state = State.Active;
         _arbitrator = arbitrator;
         _escrow = new RefundEscrow(beneficiary);
     }
 
-    /// @dev Throws if called with any state other than Accepted or Canceled.
+    /// @return Checks if provided state Success or Failure.
+    function isFinalState(State nextState) private pure returns (bool) {
+        return nextState == State.Success || nextState == State.Failure;
+    }
+
+    /// @dev Throws if called with any state other than Success or Failure.
     modifier onlyFinalState(State nextState) {
-        bool isFinalState = nextState == State.Accepted || nextState == State.Canceled;
-        require(isFinalState, "RefundableTask: final state can only be Accepted or Canceled.");
+        require(isFinalState(nextState), "RefundableTask: final state can only be Success or Failure");
         _;
     }
 
@@ -70,6 +79,11 @@ contract RefundableTask is Finalizable, Timelock {
         return _uri;
     }
 
+    /// @return The URI that holds information for this task's solution.
+    function solutionUri() public view returns (string memory) {
+        return _solutionUri;
+    }
+
     /// @return The current state of the escrow.
     function state() public view returns (State) {
         return _state;
@@ -85,25 +99,40 @@ contract RefundableTask is Finalizable, Timelock {
         return _arbitrator;
     }
 
-    /**
-     * @dev Checks whether task goal was reached.
-     * @return Whether task goal was reached
-     */
-    function goalReached() public view returns (bool) {
-        return _state == State.Accepted;
+    /// @return Whether task is finished.
+    function isFinished() public view returns (bool) {
+        return bytes(_solutionUri).length > 0;
+    }
+
+    /// @return Whether task is resolved.
+    function isResolved() public view returns (bool) {
+        return isFinalState(_state);
     }
 
     /// @dev Fallback function used for ask fund forwarding.
     function () external payable {
-        fund(msg.sender);
+        require(!isResolved(), "RefundableTask: can only accept funds while task in progress");
+        if (_state == State.Active) {
+            fundTask(msg.sender);
+        } else {
+            fundDisputeResolution();
+        }
     }
 
     /**
      * @dev Task fund forwarding, sending funds to escrow.
      * @param refundee The address funds will be sent to if a refund occurs.
      */
-    function fund(address refundee) public payable {
+    function fundTask(address refundee) public payable {
+        require(_state == State.Active, "RefundableTask: can only fund task while active");
+        require(refundee != address(0), "RefundableTask: refundee address should not be 0x0");
+
         _escrow.deposit.value(msg.value)(refundee);
+    }
+
+    /// @dev Dispute resolution fund forwarding.
+    function fundDisputeResolution() public payable {
+        require(_state == State.Dispute, "RefundableTask: can only fund dispute resolution while in dispute");
     }
 
     /**
@@ -111,59 +140,61 @@ contract RefundableTask is Finalizable, Timelock {
      * @param refundee Whose refund will be claimed.
      */
     function claimRefund(address payable refundee) public {
-        require(isFinalized, "RefundableTask: not finalized");
-        require(!goalReached(), "RefundableTask: goal reached");
+        require(isFinalized(), "RefundableTask: task contract should be finalized");
+        require(_state == State.Failure, "RefundableTask: refunds available only if task was a failure");
 
         _escrow.withdraw(refundee);
     }
 
-    /// @dev Finalization task, called when finalize() is called.
-    function _finalization() internal onlyFinalState(_state) {
-        if (goalReached()) {
-            _escrow.close();
-            _escrow.beneficiaryWithdraw();
-        } else {
-            _escrow.enableRefunds();
-        }
+    /**
+     * @dev Finish this task providing a solution.
+     * @param solutionUri_ Solution URI for this task.
+     */
+    function finish(string memory solutionUri_) public onlyBeneficiary {
+        require(_state == State.Active, "RefundableTask: can only finish task while active");
+        require(bytes(solutionUri_).length != 0, "RefundableTask: solution URI should not be empty");
 
-        super._finalization();
+        _solutionUri = solutionUri_;
+        emit TaskFinished(_solutionUri);
     }
 
     /// @dev Accept this task on owner request.
     function accept() public onlyOwner {
         require(_state == State.Active, "RefundableTask: can only cancel task while active");
-        finalize(State.Accepted);
+
+        finalize(State.Success);
     }
 
-    /// @dev Cancel this task because of timeout.
-    function cancelTimeout() public {
-        require(_state != State.Accepted, "RefundableTask: can not timeout if task already accepted");
-        require(_state != State.Canceled, "RefundableTask: can not timeout if task already canceled");
-        require(isUnlocked(), "RefundableTask: can not timeout if task is still locked");
-        finalize(State.Canceled);
+    /// @dev Fail this task because of timeout.
+    function timeout() public {
+        require(!isResolved(), "RefundableTask: can not timeout if task already resolved");
+        require(!isLocked(), "RefundableTask: can not timeout if task is still locked");
+
+        finalize(State.Failure);
     }
 
-    /// @dev Cancel this task on beneficiary request.
+    /// @dev Fail this task on beneficiary request.
     function cancel() public onlyBeneficiary {
         require(_state == State.Active, "RefundableTask: can only cancel task while active");
-        finalize(State.Canceled);
+
+        finalize(State.Failure);
     }
 
     /// @dev Raise dispute for this task on beneficiary request.
     function raiseDispute() public payable onlyBeneficiary {
         require(_state == State.Active, "RefundableTask: can only raise dispute while active");
-        // arbitrator incentive percentage hardcoded for now as 5%
-        require(msg.value >= address(_escrow).balance.mul(5).div(100), "RefundableTask: can only raise dispute with enough incentive");
+
         emit StateChanged(_state, State.Dispute);
         _state = State.Dispute;
     }
 
     /**
-     * @dev Solve dispute for this task.
+     * @dev Resolve dispute for this task.
      * @param newState The new state that will solve the dispute.
      */
-    function solveDispute(State newState) public onlyArbitrer {
-        require(_state == State.Dispute, "RefundableTask: can only solve dispute while dispute");
+    function resolveDispute(State newState) public onlyArbitrer {
+        require(_state == State.Dispute, "RefundableTask: can only resolve dispute while in dispute");
+
         finalize(newState);
     }
 
@@ -184,4 +215,15 @@ contract RefundableTask is Finalizable, Timelock {
         finalize();
     }
 
+    /// @dev Finalization task, called when finalize() is called.
+    function _finalization() internal onlyFinalState(_state) {
+        if (_state == State.Success) {
+            _escrow.close();
+            _escrow.beneficiaryWithdraw();
+        } else {
+            _escrow.enableRefunds();
+        }
+
+        super._finalization();
+    }
 }

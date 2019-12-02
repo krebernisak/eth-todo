@@ -2,7 +2,7 @@ const { BN } = require("@openzeppelin/test-helpers");
 const { expect } = require("chai");
 
 const shouldBehaveLikeFactory = ([_, owner, ...other]) => {
-  describe("as a Factory", function() {
+  describe("as Factory", function() {
     it("starts with 0 instantiations", async function() {
       expect(
         await this.contract.instantiationCount(owner)
