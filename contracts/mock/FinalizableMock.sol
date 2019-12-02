@@ -3,7 +3,7 @@ pragma solidity ^0.5.11;
 import "../lifecycle/Finalizable.sol";
 
 
-/// @dev mock class using TokenPullPayment
+/// @dev mock class using Finalizable
 contract FinalizableMock is Finalizable {
 
     function finalized() public onlyFinalized {

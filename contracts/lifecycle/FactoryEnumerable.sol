@@ -15,7 +15,7 @@ contract FactoryEnumerable is Factory {
     * @dev Returns number of creators that used this factory.
     * @return Returns number of creators that used this factory.
     */
-    function getCreatorsCount() public view returns (uint) {
+    function creatorsCount() public view returns (uint) {
         return creators.length;
     }
 
@@ -24,8 +24,10 @@ contract FactoryEnumerable is Factory {
     * @param instantiation Address of contract instantiation.
     */
     function register(address instantiation) internal {
+        if (instantiationCount(msg.sender) == 0) {
+            creators.push(msg.sender);
+        }
         super.register(instantiation);
-        creators.push(msg.sender);
     }
 
 }

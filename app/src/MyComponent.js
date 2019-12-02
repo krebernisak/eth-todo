@@ -12,7 +12,7 @@ export default ({ accounts }) => (
     <div>
       <img src={logo} alt="todo-logo" height={300} />
       <h1>TODO on Ethereum</h1>
-      <p>Examples of how to get started with Drizzle in various situations.</p>
+      <p>How to Get Things Done using a simple TODO dapp on Ethereum.</p>
     </div>
 
     <div className="section">
@@ -25,10 +25,7 @@ export default ({ accounts }) => (
       <p>This shows data from TaskFactory contract</p>
       <p>
         <strong>Number of creators: </strong>
-        <ContractData
-          contract="RefundableTaskFactory"
-          method="getCreatorsCount"
-        />
+        <ContractData contract="RefundableTaskFactory" method="creatorsCount" />
       </p>
       <p>
         <strong>Tasks created: </strong>

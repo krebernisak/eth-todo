@@ -28,11 +28,11 @@ contract RefundableTaskFactory is TaskFactory, FactoryEnumerable {
         address arbitrator
     )
         public
-        returns (address)
+        returns (address task)
     {
         require(beneficiary != address(this), "Beneficiary address should not be this contract.");
         require(arbitrator != address(this), "Arbitrator address should not be this contract.");
-        address task = address(new RefundableTask(uri, endTime, beneficiary, arbitrator));
+        task = address(new RefundableTask(uri, endTime, beneficiary, arbitrator));
         beneficiaryInstantiations[beneficiary].push(task);
         register(task);
     }

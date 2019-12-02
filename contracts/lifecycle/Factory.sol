@@ -17,7 +17,7 @@ contract Factory {
     * @param creator Contract creator.
     * @return Returns number of instantiations by creator.
     */
-    function getInstantiationCount(address creator) public view returns (uint) {
+    function instantiationCount(address creator) public view returns (uint) {
         return instantiations[creator].length;
     }
 
