@@ -183,6 +183,7 @@ contract RefundableTask is Finalizable, Timelock {
     /// @dev Raise dispute for this task on beneficiary request.
     function raiseDispute() public payable onlyBeneficiary {
         require(_state == State.Active, "RefundableTask: can only raise dispute while active");
+        require(isFinished(), "RefundableTask: can only raise dispute if task finished");
 
         emit StateChanged(_state, State.Dispute);
         _state = State.Dispute;
