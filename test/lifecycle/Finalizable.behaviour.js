@@ -1,22 +1,15 @@
 const { expectRevert, expectEvent } = require("@openzeppelin/test-helpers");
 const { expect } = require("chai");
 
-const shouldBehaveLikeFinalizable = owner => {
+const shouldBehaveLikeFinalizable = ([_, owner]) => {
   describe("as Finalizable", function() {
+    it("is not finalized at start", async function() {
+      expect(await this.contract.isFinalized()).to.be.equal(false);
+    });
+
     it("can be finalized", async function() {
       await this.contract.finalize({ from: owner });
       expect(await this.contract.isFinalized()).to.be.equal(true);
-    });
-
-    it("can execute onlyNotFinalized", async function() {
-      await this.contract.notFinalized();
-    });
-
-    it("fails to execute onlyFinalized", async function() {
-      await expectRevert(
-        this.contract.finalized(),
-        "Finalizable: Contract not finalized."
-      );
     });
 
     describe("when finalized", () => {
@@ -34,17 +27,6 @@ const shouldBehaveLikeFinalizable = owner => {
           this.contract.finalize({ from: owner }),
           "Finalizable: Contract already finalized."
         );
-      });
-
-      it("fails to execute onlyNotFinalized", async function() {
-        await expectRevert(
-          this.contract.notFinalized(),
-          "Finalizable: Contract already finalized."
-        );
-      });
-
-      it("can execute onlyFinalized", async function() {
-        await this.contract.finalized();
       });
     });
   });

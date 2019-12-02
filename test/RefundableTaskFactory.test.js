@@ -1,8 +1,8 @@
 const { time } = require("@openzeppelin/test-helpers");
-const { shouldBehaveLikeFactory } = require("./Factory.behaviour");
+const { shouldBehaveLikeFactory } = require("./lifecycle/Factory.behaviour");
 const {
   shouldBehaveLikeFactoryEnumerable
-} = require("./FactoryEnumerable.behaviour");
+} = require("./lifecycle/FactoryEnumerable.behaviour");
 
 const RefundableTaskFactory = artifacts.require("RefundableTaskFactory");
 

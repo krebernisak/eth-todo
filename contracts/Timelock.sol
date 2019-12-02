@@ -30,7 +30,7 @@ contract Timelock {
      * @dev Returns whether this contract lock is unlocked.
      * @return Returns true if unlocked false otherwise.
      */
-    function unlocked() public view returns (bool) {
+    function isUnlocked() public view returns (bool) {
         // solhint-disable-next-line not-rely-on-time
         return block.timestamp >= _releaseTime;
     }

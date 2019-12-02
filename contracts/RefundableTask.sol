@@ -47,7 +47,7 @@ contract RefundableTask is Finalizable, Timelock {
     /// @dev Throws if called with any state other than Accepted or Canceled.
     modifier onlyFinalState(State nextState) {
         bool isFinalState = nextState == State.Accepted || nextState == State.Canceled;
-        require(isFinalState, "RefundableTask: resolved state can only be Accepted or Canceled");
+        require(isFinalState, "RefundableTask: final state can only be Accepted or Canceled.");
         _;
     }
 
@@ -112,6 +112,8 @@ contract RefundableTask is Finalizable, Timelock {
     /// @dev Cancel this task because of timeout.
     function cancelTimeout() public {
         require(_state != State.Accepted, "RefundableTask: can not timeout if task already accepted");
+        require(_state != State.Canceled, "RefundableTask: can not timeout if task already canceled");
+        require(isUnlocked(), "RefundableTask: can not timeout if task is still locked");
         finalize(State.Canceled);
     }
 
@@ -147,7 +149,7 @@ contract RefundableTask is Finalizable, Timelock {
      * @dev Move contract to a final state.
      * @param newState The final state.
      */
-    function finalize(State newState) private onlyFinalState(newState) {
+    function finalize(State newState) private {
         emit StateChanged(_state, newState);
         _state = newState;
         _transferOwnership(msg.sender);
