@@ -4,7 +4,7 @@ const { shouldBehaveLikeFinalizable } = require("./Finalizable.behaviour");
 const Finalizable = artifacts.require("FinalizableMock");
 
 contract("FinalizableMock", accounts => {
-  let [_, owner] = accounts;
+  const [_, owner] = accounts;
 
   beforeEach(async function() {
     this.contract = await Finalizable.new({ from: owner });

@@ -7,8 +7,8 @@ const FinalizableMockFactory = artifacts.require("FinalizableMockFactory");
 
 contract("FinalizableMockFactory", function(accounts) {
   beforeEach(async function() {
-    let [_, owner] = accounts;
-    this.contract = await FinalizableMockFactory.new({ from: owner });
+    const [_, alice] = accounts;
+    this.contract = await FinalizableMockFactory.new({ from: alice });
     this.createFn = acc => this.contract.create({ from: acc });
   });
 

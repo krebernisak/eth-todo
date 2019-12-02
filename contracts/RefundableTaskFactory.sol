@@ -11,8 +11,6 @@ import "./RefundableTask.sol";
  */
 contract RefundableTaskFactory is TaskFactory, FactoryEnumerable {
 
-    mapping(address => address[]) public beneficiaryInstantiations;
-
     /**
      * @dev Allows verified creation of RefundableTask contract.
      * @param uri String URI where task info is located.
@@ -33,7 +31,6 @@ contract RefundableTaskFactory is TaskFactory, FactoryEnumerable {
         require(beneficiary != address(this), "Beneficiary address should not be this contract.");
         require(arbitrator != address(this), "Arbitrator address should not be this contract.");
         task = address(new RefundableTask(uri, endTime, beneficiary, arbitrator));
-        beneficiaryInstantiations[beneficiary].push(task);
         register(task);
     }
 }

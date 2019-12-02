@@ -8,11 +8,11 @@ const RefundableTaskFactory = artifacts.require("RefundableTaskFactory");
 
 contract("RefundableTaskFactory", function(accounts) {
   beforeEach(async function() {
-    let [_, owner] = accounts;
-    this.contract = await RefundableTaskFactory.new({ from: owner });
+    const [_, alice, bob, charlie] = accounts;
+    this.contract = await RefundableTaskFactory.new({ from: alice });
     let endTime = (await time.latest()).add(time.duration.minutes(10));
     this.createFn = acc =>
-      this.contract.create("uri://", endTime, accounts[1], accounts[2], {
+      this.contract.create("uri://", endTime, bob, charlie, {
         from: acc
       });
   });
