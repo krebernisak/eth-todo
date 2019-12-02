@@ -1,6 +1,7 @@
 pragma solidity ^0.5.11;
 
 import "openzeppelin-solidity/contracts/payment/escrow/RefundEscrow.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./lifecycle/Finalizable.sol";
 import "./Timelock.sol";
 
@@ -10,6 +11,7 @@ import "./Timelock.sol";
  * @dev Allows creation of refundable task contract.
  */
 contract RefundableTask is Finalizable, Timelock {
+    using SafeMath for uint256;
 
     // Task state
     enum State { Active, Dispute, Accepted, Canceled }
@@ -91,6 +93,30 @@ contract RefundableTask is Finalizable, Timelock {
         return _state == State.Accepted;
     }
 
+    /// @dev Fallback function used for ask fund forwarding.
+    function () external payable {
+        fund(msg.sender);
+    }
+
+    /**
+     * @dev Task fund forwarding, sending funds to escrow.
+     * @param refundee The address funds will be sent to if a refund occurs.
+     */
+    function fund(address refundee) public payable {
+        _escrow.deposit.value(msg.value)(refundee);
+    }
+
+    /**
+     * @dev Investors can claim refunds here if task is unsuccessful.
+     * @param refundee Whose refund will be claimed.
+     */
+    function claimRefund(address payable refundee) public {
+        require(isFinalized, "RefundableTask: not finalized");
+        require(!goalReached(), "RefundableTask: goal reached");
+
+        _escrow.withdraw(refundee);
+    }
+
     /// @dev Finalization task, called when finalize() is called.
     function _finalization() internal onlyFinalState(_state) {
         if (goalReached()) {
@@ -126,6 +152,8 @@ contract RefundableTask is Finalizable, Timelock {
     /// @dev Raise dispute for this task on beneficiary request.
     function raiseDispute() public payable onlyBeneficiary {
         require(_state == State.Active, "RefundableTask: can only raise dispute while active");
+        // arbitrator incentive percentage hardcoded for now as 5%
+        require(msg.value >= address(_escrow).balance.mul(5).div(100), "RefundableTask: can only raise dispute with enough incentive");
         emit StateChanged(_state, State.Dispute);
         _state = State.Dispute;
     }
@@ -140,7 +168,7 @@ contract RefundableTask is Finalizable, Timelock {
     }
 
     /// @dev Transfer all Ether held by the contract to the owner.
-    function reclaimEther() external onlyOwner {
+    function reclaimEther() external onlyOwner onlyFinalState(_state) {
         address payable _owner = address(uint160(owner()));
         _owner.transfer(address(this).balance);
     }
