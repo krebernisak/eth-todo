@@ -5,7 +5,7 @@ const {
 
 const FinalizableMockFactory = artifacts.require("FinalizableMockFactory");
 
-contract("TokenTimelockFactory", function(accounts) {
+contract("FinalizableMockFactory", function(accounts) {
   beforeEach(async function() {
     let [_, owner] = accounts;
     this.contract = await FinalizableMockFactory.new({ from: owner });
