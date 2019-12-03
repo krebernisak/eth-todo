@@ -1,5 +1,11 @@
-const { time, expectRevert } = require("@openzeppelin/test-helpers");
+const { time, expectRevert, BN } = require("@openzeppelin/test-helpers");
 const { shouldBehaveLikeTimelock } = require("./lifecycle/Timelock.behaviour");
+const {
+  shouldBehaveLikeTaskInFailure
+} = require("./RefundableTask.Failure.behaviour");
+const {
+  shouldBehaveLikeTaskInSuccess
+} = require("./RefundableTask.Success.behaviour");
 const { expect } = require("chai");
 
 const RefundableTask = artifacts.require("RefundableTask");
@@ -27,7 +33,23 @@ contract("RefundableTask", function(accounts) {
     });
   });
 
-  describe("in Dispute", function() {
+  describe("when accepted", function() {
+    beforeEach(async function() {
+      await this.contract.accept({ from: alice });
+    });
+
+    shouldBehaveLikeTaskInSuccess(accounts);
+  });
+
+  describe("when canceled", function() {
+    beforeEach(async function() {
+      await this.contract.cancel({ from: bob });
+    });
+
+    shouldBehaveLikeTaskInFailure(accounts);
+  });
+
+  describe("when in Dispute", function() {
     beforeEach(async function() {
       await this.contract.finish("uri://", { from: bob });
       await this.contract.raiseDispute({ from: bob });
@@ -51,7 +73,25 @@ contract("RefundableTask", function(accounts) {
         "RefundableTask: final state can only be Success or Failure"
       );
     });
+
+    describe("resolved as Failure", function() {
+      beforeEach(async function() {
+        const failure = new BN("3");
+        await this.contract.resolveDispute(failure, { from: charlie });
+      });
+
+      shouldBehaveLikeTaskInFailure(accounts);
+    });
+
+    describe("resolved as Success", function() {
+      beforeEach(async function() {
+        const success = new BN("2");
+        await this.contract.resolveDispute(success, { from: charlie });
+      });
+
+      shouldBehaveLikeTaskInSuccess(accounts);
+    });
   });
 
-  shouldBehaveLikeTimelock();
+  shouldBehaveLikeTimelock(accounts);
 });

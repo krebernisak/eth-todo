@@ -160,7 +160,8 @@ contract RefundableTask is Finalizable, Timelock {
 
     /// @dev Accept this task on owner request.
     function accept() public onlyOwner {
-        require(_state == State.Active, "RefundableTask: can only cancel task while active");
+        require(_state == State.Active, "RefundableTask: can only accept task while active");
+        require(isFinished(), "RefundableTask: can only accept task if finished");
 
         finalize(State.Success);
     }
