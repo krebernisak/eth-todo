@@ -109,6 +109,11 @@ contract RefundableTask is Finalizable, Timelock {
         return isFinalState(_state);
     }
 
+    /// @return Returns task total allocated funds.
+    function taskBalance() public view returns (uint256) {
+        return address(_escrow).balance;
+    }
+
     /// @dev Fallback function used for ask fund forwarding.
     function () external payable {
         require(!isResolved(), "RefundableTask: can only accept funds while task in progress");

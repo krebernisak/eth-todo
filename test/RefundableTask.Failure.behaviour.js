@@ -5,7 +5,7 @@ const {
   shouldBehaveLikeTaskIsResolved
 } = require("./RefundableTask.Resolved.behaviour");
 
-const shouldBehaveLikeTaskInFailure = accounts => {
+const shouldBehaveLikeTaskIsFailure = accounts => {
   describe("when Failure", function() {
     shouldBehaveLikeTaskIsResolved(accounts);
 
@@ -16,5 +16,5 @@ const shouldBehaveLikeTaskInFailure = accounts => {
 };
 
 module.exports = {
-  shouldBehaveLikeTaskInFailure
+  shouldBehaveLikeTaskIsFailure
 };

@@ -1,12 +1,21 @@
-const { time, expectRevert, BN } = require("@openzeppelin/test-helpers");
+const { expect } = require("chai");
+const {
+  ether,
+  balance,
+  time,
+  expectRevert,
+  BN
+} = require("@openzeppelin/test-helpers");
 const { shouldBehaveLikeTimelock } = require("./lifecycle/Timelock.behaviour");
 const {
-  shouldBehaveLikeTaskInFailure
+  shouldBehaveLikeTaskIsActive
+} = require("./RefundableTask.Active.behaviour");
+const {
+  shouldBehaveLikeTaskIsFailure
 } = require("./RefundableTask.Failure.behaviour");
 const {
-  shouldBehaveLikeTaskInSuccess
+  shouldBehaveLikeTaskIsSuccess
 } = require("./RefundableTask.Success.behaviour");
-const { expect } = require("chai");
 
 const RefundableTask = artifacts.require("RefundableTask");
 
@@ -33,12 +42,15 @@ contract("RefundableTask", function(accounts) {
     });
   });
 
+  shouldBehaveLikeTaskIsActive(accounts);
+
   describe("when accepted", function() {
     beforeEach(async function() {
+      await this.contract.finish("uri://", { from: bob });
       await this.contract.accept({ from: alice });
     });
 
-    shouldBehaveLikeTaskInSuccess(accounts);
+    shouldBehaveLikeTaskIsSuccess(accounts);
   });
 
   describe("when canceled", function() {
@@ -46,7 +58,7 @@ contract("RefundableTask", function(accounts) {
       await this.contract.cancel({ from: bob });
     });
 
-    shouldBehaveLikeTaskInFailure(accounts);
+    shouldBehaveLikeTaskIsFailure(accounts);
   });
 
   describe("when in Dispute", function() {
@@ -74,13 +86,22 @@ contract("RefundableTask", function(accounts) {
       );
     });
 
+    it("can send ether to fund dispute resolution", async function() {
+      const amount = ether("1");
+      await this.contract.fundDisputeResolution({ value: amount, from: alice });
+      await this.contract.fundDisputeResolution({ value: amount, from: bob });
+      expect(
+        await balance.current(this.contract.address)
+      ).to.be.bignumber.equal(ether("2"));
+    });
+
     describe("resolved as Failure", function() {
       beforeEach(async function() {
         const failure = new BN("3");
         await this.contract.resolveDispute(failure, { from: charlie });
       });
 
-      shouldBehaveLikeTaskInFailure(accounts);
+      shouldBehaveLikeTaskIsFailure(accounts);
     });
 
     describe("resolved as Success", function() {
@@ -89,7 +110,7 @@ contract("RefundableTask", function(accounts) {
         await this.contract.resolveDispute(success, { from: charlie });
       });
 
-      shouldBehaveLikeTaskInSuccess(accounts);
+      shouldBehaveLikeTaskIsSuccess(accounts);
     });
   });
 
