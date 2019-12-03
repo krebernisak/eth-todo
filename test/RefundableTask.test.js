@@ -3,6 +3,7 @@ const {
   ether,
   balance,
   time,
+  send,
   expectRevert,
   BN
 } = require("@openzeppelin/test-helpers");
@@ -20,13 +21,21 @@ const {
 const RefundableTask = artifacts.require("RefundableTask");
 
 contract("RefundableTask", function(accounts) {
-  const [_, alice, bob, charlie] = accounts;
+  const [_, alice, bob, charlie, ...investors] = accounts;
 
   beforeEach(async function() {
     let endTime = (await time.latest()).add(time.duration.minutes(10));
     this.contract = await RefundableTask.new("uri://", endTime, bob, charlie, {
       from: alice
     });
+  });
+
+  it("holds the right amount of funds", async function() {
+    let amount = ether("1");
+    await send.ether(alice, this.contract.address, amount);
+    await send.ether(investors[0], this.contract.address, amount);
+    await send.ether(investors[1], this.contract.address, amount);
+    expect(await this.contract.taskBalance()).to.be.bignumber.equal(ether("3"));
   });
 
   describe("as Finalizable", function() {
@@ -46,7 +55,12 @@ contract("RefundableTask", function(accounts) {
 
   describe("when accepted", function() {
     beforeEach(async function() {
+      let amount = ether("1");
+      await send.ether(alice, this.contract.address, amount);
+      await send.ether(investors[0], this.contract.address, amount);
+      this.initialTaskBalance = await this.contract.taskBalance();
       await this.contract.finish("uri://", { from: bob });
+      this.initialBobBalance = await balance.current(bob);
       await this.contract.accept({ from: alice });
     });
 
@@ -63,8 +77,13 @@ contract("RefundableTask", function(accounts) {
 
   describe("when in Dispute", function() {
     beforeEach(async function() {
+      let amount = ether("1");
+      await send.ether(alice, this.contract.address, amount);
+      await send.ether(investors[0], this.contract.address, amount);
+      this.initialTaskBalance = await this.contract.taskBalance();
       await this.contract.finish("uri://", { from: bob });
-      await this.contract.raiseDispute({ from: bob });
+      await this.contract.raiseDispute({ from: bob, amount: ether("1") });
+      this.initialBobBalance = await balance.current(bob);
     });
 
     it("is not finalized", async function() {

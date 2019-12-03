@@ -44,6 +44,7 @@ contract RefundableTask is Finalizable, Timelock {
         require(bytes(uri).length != 0, "RefundableTask: task URI should not be empty");
         require(beneficiary != address(0), "RefundableTask: Beneficiary address should not be 0x0");
         require(arbitrator != address(0), "RefundableTask: Arbitrator address should not be 0x0");
+        require(beneficiary != arbitrator, "RefundableTask: Beneficiary and arbitrator should not be the same account");
 
         _uri = uri;
         _state = State.Active;

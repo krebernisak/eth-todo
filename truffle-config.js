@@ -8,7 +8,7 @@ module.exports = {
     develop: {
       host: "127.0.0.1",
       network_id: "*", // Match any network id
-      port: 8545,
+      port: 9545,
       websockets: true
     },
     ganache: {
